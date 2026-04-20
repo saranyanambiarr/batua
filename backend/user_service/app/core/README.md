@@ -1,0 +1,1 @@
+This folder holds things used everywhere but owned nowhere.

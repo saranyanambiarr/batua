@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply bg-gray-50 dark:bg-gray-950;
+  }
+  body {
+    @apply bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100;
+    transition: background-color 0.2s, color 0.2s;
+  }
+}
+
+@layer utilities {
+  .auth-bg {
+    background-color: #0a0a0a;
+    position: relative;
+    isolation: isolate;
+  }
+
+  .auth-bg::before,
+  .auth-bg::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /* Top-left beam */
+  .auth-bg::before {
+    background: radial-gradient(
+      ellipse 55% 65% at -5% 20%,
+      rgba(180, 180, 180, 0.13) 0%,
+      rgba(120, 120, 120, 0.06) 40%,
+      transparent 70%
+    );
+    transform: rotate(-15deg);
+    transform-origin: top left;
+  }
+
+  /* Bottom-right beam */
+  .auth-bg::after {
+    background: radial-gradient(
+      ellipse 55% 65% at 105% 80%,
+      rgba(180, 180, 180, 0.11) 0%,
+      rgba(120, 120, 120, 0.05) 40%,
+      transparent 70%
+    );
+    transform: rotate(-15deg);
+    transform-origin: bottom right;
+  }
+}

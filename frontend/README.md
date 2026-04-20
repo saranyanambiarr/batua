@@ -1,0 +1,1 @@
+main.jsx entry point of entire application -> React app is a building, then this file is the foundation and front door.
