@@ -22,8 +22,6 @@ export default function ForgotPassword() {
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
       if (!res.ok) { setError("Something went wrong. Please try again."); return; }
-      const data = await res.json();
-      if (!data.found) { setError("No account found with that email address."); return; }
       setSubmitted(true);
     } catch {
       setError("Could not connect to the server. Please try again.");

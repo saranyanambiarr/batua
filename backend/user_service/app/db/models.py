@@ -22,3 +22,7 @@ class User(Base):
     is_verified           = Column(Boolean, default=False, nullable=False)
     verification_token    = Column(String, nullable=True)   # one-time token sent in link
     verification_sent_at  = Column(DateTime, nullable=True) # to enforce token expiry
+
+    # Password reset
+    password_reset_token    = Column(String, nullable=True)
+    password_reset_sent_at  = Column(DateTime, nullable=True)

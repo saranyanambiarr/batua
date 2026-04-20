@@ -22,7 +22,8 @@ from app.schemas.user import UserCreate
 from app.db.models import User
 from app.api.deps import get_db
 from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token
-from app.services.email import send_verification_email
+from app.services.email import send_verification_email, send_password_reset_email
+from app.services.email import PASSWORD_RESET_EXPIRY_HOURS
 
 VERIFICATION_TOKEN_EXPIRY_HOURS = 24
 
@@ -177,11 +178,48 @@ class ForgotPasswordRequest(BaseModel):
 @router.post("/forgot-password")
 def forgot_password(body: ForgotPasswordRequest, db: Session = Depends(get_db)):
     """
-    Checks if the email exists. Returns 200 with found=true/false so the
-    frontend can tell the user clearly whether the account exists.
+    If the email belongs to a verified account, generates a password reset token
+    and sends a reset link to that address. Always returns the same response to
+    avoid leaking whether an account exists.
     """
     user = db.query(User).filter(User.email == body.email.strip().lower()).first()
-    return {"found": user is not None}
+
+    if user and user.is_verified:
+        reset_token = secrets.token_urlsafe(32)
+        user.password_reset_token   = reset_token
+        user.password_reset_sent_at = datetime.now(timezone.utc)
+        db.commit()
+        send_password_reset_email(to_email=user.email, token=reset_token)
+
+    return {"message": "If an account with that email exists, a reset link has been sent."}
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
+@router.post("/reset-password")
+def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """
+    Validates the reset token and updates the user's password.
+    """
+    user = db.query(User).filter(User.password_reset_token == body.token).first()
+
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link.")
+
+    if user.password_reset_sent_at:
+        expiry = user.password_reset_sent_at.replace(tzinfo=timezone.utc) + timedelta(hours=PASSWORD_RESET_EXPIRY_HOURS)
+        if datetime.now(timezone.utc) > expiry:
+            raise HTTPException(status_code=400, detail="Reset link has expired. Please request a new one.")
+
+    user.hashed_password      = hash_password(body.new_password)
+    user.password_reset_token   = None  # consume token so it can't be reused
+    user.password_reset_sent_at = None
+    db.commit()
+
+    return {"message": "Password updated successfully. You can now log in."}
 
 @router.get("/status")
 def auth_status(request: Request):

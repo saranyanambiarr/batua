@@ -8,6 +8,7 @@ import Landing          from "./pages/Landing";
 import Login            from "./pages/Login";
 import Register         from "./pages/Register";
 import ForgotPassword   from "./pages/ForgotPassword";
+import ResetPassword    from "./pages/ResetPassword";
 import VerifyEmailSent  from "./pages/VerifyEmailSent";
 import VerifyEmail      from "./pages/VerifyEmail";
 import Dashboard        from "./pages/Dashboard";
@@ -33,6 +34,7 @@ function App() {
       <Route path="/forgot-password"   element={<ForgotPassword />} />
       <Route path="/verify-email-sent" element={<VerifyEmailSent />} />
       <Route path="/verify-email"      element={<VerifyEmail />} />
+      <Route path="/reset-password"    element={<ResetPassword />} />
 
       {/* Protected — all share the Layout sidebar */}
       {[
