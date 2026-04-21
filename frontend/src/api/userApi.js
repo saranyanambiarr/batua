@@ -1,5 +1,7 @@
 import { API_BASE_URL } from "./config";
+import { apiFetch } from "./fetch";
 
+// Public endpoints — no token refresh needed
 export async function loginUser(payload) {
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: "POST",
@@ -7,27 +9,23 @@ export async function loginUser(payload) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-
   return handleResponse(res);
 }
 
 export async function registerUser(payload) {
-    const res = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-    });
-
-    return handleResponse(res);
+  const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
 }
 
+// Protected endpoint — goes through apiFetch for 401 handling
 export async function fetchCurrentUser() {
-    const res = await fetch(`${API_BASE_URL}/users/me`, {
-        credentials: "include",
-    });
-
-    return handleResponse(res);
+  const res = await apiFetch(`${API_BASE_URL}/users/me`);
+  return handleResponse(res);
 }
 
 async function handleResponse(res) {

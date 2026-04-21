@@ -1,0 +1,129 @@
+services:
+
+  # ── Databases ────────────────────────────────────────────────────────────────
+
+  user_db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: user_service
+      POSTGRES_PASSWORD: paisa
+      POSTGRES_DB: user_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user_service -d user_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  transaction_db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: transaction_service
+      POSTGRES_PASSWORD: paisa
+      POSTGRES_DB: transaction_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - transaction_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U transaction_service -d transaction_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  # ── Backend services ─────────────────────────────────────────────────────────
+
+  user_service:
+    build:
+      context: ./backend/user_service
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/user_service/.env
+    environment:
+      # override .env values so they point to Docker service names, not localhost
+      DATABASE_URL: postgresql://user_service:paisa@user_db:5432/user_db
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - app_logs:/app/logs
+    depends_on:
+      user_db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  transaction_service:
+    build:
+      context: ./backend/transaction_service
+    ports:
+      - "8001:8000"
+    env_file:
+      - ./backend/transaction_service/.env
+    environment:
+      DATABASE_URL: postgresql://transaction_service:paisa@transaction_db:5432/transaction_db
+      REDIS_URL: redis://redis:6379/1
+    volumes:
+      - app_logs:/app/logs
+    depends_on:
+      transaction_db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  # ── Observability ────────────────────────────────────────────────────────────
+
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    depends_on:
+      - user_service
+      - transaction_service
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+
+  # ── Frontend ─────────────────────────────────────────────────────────────────
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Vite bakes these URLs into the JS bundle at build time
+        VITE_API_BASE_URL: http://localhost:8000
+        VITE_TRANSACTION_API_URL: http://localhost:8001
+    ports:
+      - "5173:5173"
+    depends_on:
+      - user_service
+      - transaction_service
+
+volumes:
+  user_db_data:
+  transaction_db_data:
+  app_logs:
+  grafana_data:

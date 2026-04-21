@@ -1,0 +1,98 @@
+{
+  "title": "Batua — Service Overview",
+  "uid": "batua-overview",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "15s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Request Rate (req/s)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{job=\"user_service\"}[1m])",
+          "legendFormat": "user_service - {{method}} {{handler}} {{status_code}}"
+        },
+        {
+          "expr": "rate(http_requests_total{job=\"transaction_service\"}[1m])",
+          "legendFormat": "txn_service - {{method}} {{handler}} {{status_code}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Error Rate (4xx + 5xx req/s)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{job=\"user_service\", status_code=~\"4..|5..\"}[1m])",
+          "legendFormat": "user_service errors"
+        },
+        {
+          "expr": "rate(http_requests_total{job=\"transaction_service\", status_code=~\"4..|5..\"}[1m])",
+          "legendFormat": "txn_service errors"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "P95 Latency (s)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"user_service\"}[1m]))",
+          "legendFormat": "user_service p95"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"transaction_service\"}[1m]))",
+          "legendFormat": "txn_service p95"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "P50 Latency (s)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job=\"user_service\"}[1m]))",
+          "legendFormat": "user_service p50"
+        },
+        {
+          "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job=\"transaction_service\"}[1m]))",
+          "legendFormat": "txn_service p50"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Total Requests (counter)",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 16, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "expr": "sum(http_requests_total{job=\"user_service\"})",
+          "legendFormat": "user_service"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Total Requests (counter)",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 16, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "expr": "sum(http_requests_total{job=\"transaction_service\"})",
+          "legendFormat": "txn_service"
+        }
+      ]
+    }
+  ]
+}

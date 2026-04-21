@@ -3,6 +3,7 @@ import { fetchCurrentUser } from "../api/userApi";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../api/config";
+import { apiFetch } from "../api/fetch";
 
 function Section({ title, subtitle, children }) {
   return (
@@ -48,10 +49,7 @@ export default function Profile() {
     }
     setDeleting(true);
     try {
-      await fetch(`${API_BASE_URL}/users/me`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      await apiFetch(`${API_BASE_URL}/users/me`, { method: "DELETE" });
       await logout();
       navigate("/");
     } catch {

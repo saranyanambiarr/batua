@@ -1,15 +1,6 @@
 """
-Centralised logging setup for user_service.
-
-What this does:
-- Structured JSON logs (one JSON object per line) — easy to parse/search
-- Writes to logs/user_service.log AND stdout simultaneously
-- Log level controlled by LOG_LEVEL env var (default INFO)
-- rotate at 5 MB, keep last 3 files
-
-What this does NOT do:
-- Send to external systems (add Loki/ELK handler here when ready)
-- Handle tracing / distributed correlation IDs (future work)
+Centralised logging setup for transaction_service.
+Same pattern as user_service — JSON logs to stdout + rotating file.
 """
 
 import logging
@@ -20,15 +11,13 @@ import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
-SERVICE_NAME = "user_service"
+SERVICE_NAME = "transaction_service"
 LOG_LEVEL    = os.getenv("LOG_LEVEL", "INFO").upper()
 LOG_DIR      = Path("/app/logs")
-LOG_FILE     = LOG_DIR / "user_service.log"
+LOG_FILE     = LOG_DIR / "transaction_service.log"
 
 
 class JsonFormatter(logging.Formatter):
-    """Emit each log record as a single JSON line."""
-
     def format(self, record: logging.LogRecord) -> str:
         payload = {
             "ts":      datetime.now(timezone.utc).isoformat(),
@@ -37,7 +26,6 @@ class JsonFormatter(logging.Formatter):
             "logger":  record.name,
             "msg":     record.getMessage(),
         }
-        # attach any extra fields passed via logger.info("...", extra={...})
         for key, val in record.__dict__.items():
             if key not in (
                 "msg", "args", "levelname", "levelno", "pathname", "filename",
@@ -54,22 +42,18 @@ class JsonFormatter(logging.Formatter):
 
 
 def get_logger(name: str) -> logging.Logger:
-    """Return a named logger configured for this service."""
     logger = logging.getLogger(name)
 
-    if logger.handlers:          # already configured — don't add duplicate handlers
+    if logger.handlers:
         return logger
 
     logger.setLevel(LOG_LEVEL)
-
     fmt = JsonFormatter()
 
-    # ── stdout handler ────────────────────────────────────────────────────────
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(fmt)
     logger.addHandler(stream_handler)
 
-    # ── rotating file handler ─────────────────────────────────────────────────
     try:
         LOG_DIR.mkdir(parents=True, exist_ok=True)
         file_handler = logging.handlers.RotatingFileHandler(
@@ -78,7 +62,6 @@ def get_logger(name: str) -> logging.Logger:
         file_handler.setFormatter(fmt)
         logger.addHandler(file_handler)
     except OSError:
-        # If the log directory can't be created (e.g. read-only FS), keep only stdout
         pass
 
     logger.propagate = False

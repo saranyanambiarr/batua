@@ -18,12 +18,15 @@ from sqlalchemy.orm import Session
 from jose import jwt
 from pydantic import BaseModel
 from app.core.config import settings
+from app.core.logging import get_logger
 from app.schemas.user import UserCreate
 from app.db.models import User
 from app.api.deps import get_db
 from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token
 from app.services.email import send_verification_email, send_password_reset_email
 from app.services.email import PASSWORD_RESET_EXPIRY_HOURS
+
+logger = get_logger("user_service.auth")
 
 VERIFICATION_TOKEN_EXPIRY_HOURS = 24
 
@@ -56,6 +59,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
     if existing:
         if existing.is_verified:
+            logger.warning("Register attempt for already-verified email", extra={"email": user.email})
             raise HTTPException(status_code=400, detail="Email already registered")
         # Unverified account: refresh the token and resend the email
         verification_token = secrets.token_urlsafe(32)
@@ -64,6 +68,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         existing.verification_sent_at = datetime.now(timezone.utc)
         db.commit()
         send_verification_email(to_email=existing.email, token=verification_token)
+        logger.info("Verification email resent to unverified account", extra={"email": user.email})
         return {"message": "Account created. Please check your email to verify your account."}
 
     verification_token = secrets.token_urlsafe(32)
@@ -80,6 +85,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
 
     send_verification_email(to_email=db_user.email, token=verification_token)
+    logger.info("New user registered", extra={"email": db_user.email, "user_id": db_user.id})
 
     return {"message": "Account created. Please check your email to verify your account."}
 
@@ -88,11 +94,14 @@ def login(user: UserCreate, response: Response, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user.email).first()
 
     if not db_user:
+        logger.warning("Login failed: email not found", extra={"email": user.email})
         raise HTTPException(status_code=401, detail="No account found with that email.")
     if not verify_password(user.password, db_user.hashed_password):
+        logger.warning("Login failed: wrong password", extra={"email": user.email, "user_id": db_user.id})
         raise HTTPException(status_code=401, detail="Incorrect password.")
 
     if not db_user.is_verified:
+        logger.warning("Login failed: email not verified", extra={"email": user.email, "user_id": db_user.id})
         raise HTTPException(status_code=403, detail="Please verify your email address before logging in.")
 
     access_token = create_access_token(str(db_user.id))
@@ -115,6 +124,7 @@ def login(user: UserCreate, response: Response, db: Session = Depends(get_db)):
         samesite="lax",
         max_age=60 * 60 * 24 * 7 # 7 days
     )
+    logger.info("User logged in", extra={"email": db_user.email, "user_id": db_user.id})
     return {"message": "Login successful"}
 
 @router.get("/verify-email")
@@ -219,6 +229,7 @@ def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
     user.password_reset_sent_at = None
     db.commit()
 
+    logger.info("Password reset successfully", extra={"user_id": user.id})
     return {"message": "Password updated successfully. You can now log in."}
 
 @router.get("/status")
