@@ -78,6 +78,40 @@ services:
       redis:
         condition: service_started
 
+  budget_db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: budget_service
+      POSTGRES_PASSWORD: paisa
+      POSTGRES_DB: budget_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - budget_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U budget_service -d budget_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  budget_service:
+    build:
+      context: ./backend/budget_service
+    ports:
+      - "8002:8000"
+    env_file:
+      - ./backend/budget_service/.env
+    environment:
+      DATABASE_URL: postgresql://budget_service:paisa@budget_db:5432/budget_db
+      TRANSACTION_DATABASE_URL: postgresql://transaction_service:paisa@transaction_db:5432/transaction_db
+    volumes:
+      - app_logs:/app/logs
+    depends_on:
+      budget_db:
+        condition: service_healthy
+      transaction_db:
+        condition: service_healthy
+
   # ── Observability ────────────────────────────────────────────────────────────
 
   prometheus:
@@ -116,6 +150,7 @@ services:
         # Vite bakes these URLs into the JS bundle at build time
         VITE_API_BASE_URL: http://localhost:8000
         VITE_TRANSACTION_API_URL: http://localhost:8001
+        VITE_BUDGET_API_URL: http://localhost:8002
     ports:
       - "5173:5173"
     depends_on:
@@ -125,5 +160,6 @@ services:
 volumes:
   user_db_data:
   transaction_db_data:
+  budget_db_data:
   app_logs:
   grafana_data:

@@ -8,6 +8,7 @@ class TransactionCreate(BaseModel):
     category: Optional[str] = None
     date: date
     note: Optional[str] = None
+    comment: Optional[str] = None
 
 class TransactionResponse(BaseModel):
     id: int
@@ -16,6 +17,7 @@ class TransactionResponse(BaseModel):
     category: Optional[str]
     date: date
     note: Optional[str]
+    comment: Optional[str]
     receipt_url: Optional[str]
 
     class Config:

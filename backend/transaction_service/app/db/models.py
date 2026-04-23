@@ -12,4 +12,5 @@ class Transaction(Base):
     category    = Column(String, nullable=True)
     date        = Column(Date, nullable=False)
     note        = Column(String, nullable=True)
+    comment     = Column(String, nullable=True)
     receipt_url = Column(String, nullable=True)

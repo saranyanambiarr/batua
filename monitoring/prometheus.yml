@@ -10,3 +10,7 @@ scrape_configs:
   - job_name: transaction_service
     static_configs:
       - targets: ["transaction_service:8000"]
+
+  - job_name: budget_service
+    static_configs:
+      - targets: ["budget_service:8000"]

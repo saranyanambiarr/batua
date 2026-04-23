@@ -21,6 +21,7 @@ def create_transaction(
     category: Optional[str] = Form(None),
     date:     date          = Form(...),
     note:     Optional[str] = Form(None),
+    comment:  Optional[str] = Form(None),
     proof:    Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
@@ -35,6 +36,7 @@ def create_transaction(
         category=category,
         date=date,
         note=note,
+        comment=comment,
         receipt_url=receipt_url,
     )
     db.add(txn)

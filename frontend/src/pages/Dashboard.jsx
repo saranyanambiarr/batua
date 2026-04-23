@@ -2,11 +2,17 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchCurrentUser } from "../api/userApi";
 import { fetchTransactions, fetchSummary } from "../api/transactionApi";
+import { fetchBudgets } from "../api/budgetApi";
 import { useAuth } from "../context/AuthContext";
-import { PIE_COLORS } from "../data/mockData";
 import CashFlowChart    from "../components/charts/CashFlowChart";
 import SpendingBarChart from "../components/charts/SpendingBarChart";
 import ExpensePieChart  from "../components/charts/ExpensePieChart";
+
+const PIE_COLORS = [
+  "#6366f1", "#f59e0b", "#ec4899", "#10b981",
+  "#ef4444", "#3b82f6", "#8b5cf6", "#14b8a6",
+  "#f97316", "#84cc16",
+];
 
 function getCategoryBreakdown(transactions) {
   const expenses = transactions.filter(t => t.type === "expense");
@@ -39,11 +45,12 @@ function buildDailySpend(transactions) {
 }
 
 export default function Dashboard() {
-  const [user, setUser]               = useState(null);
-  const [summary, setSummary]         = useState({ income: 0, expense: 0, balance: 0 });
+  const [user, setUser]                 = useState(null);
+  const [summary, setSummary]           = useState({ income: 0, expense: 0, balance: 0 });
   const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState("");
+  const [budgets, setBudgets]           = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState("");
   const { logout } = useAuth();
   const navigate   = useNavigate();
 
@@ -52,11 +59,13 @@ export default function Dashboard() {
       fetchCurrentUser(),
       fetchSummary(),
       fetchTransactions(),
+      fetchBudgets().catch(() => []),   // budget service optional — don't fail dashboard if it's down
     ])
-      .then(([userData, summaryData, txnData]) => {
+      .then(([userData, summaryData, txnData, budgetData]) => {
         setUser(userData);
         setSummary(summaryData);
         setTransactions(txnData);
+        setBudgets(budgetData);
       })
       .catch(() => { setError("Session expired"); logout(); })
       .finally(() => setLoading(false));
@@ -172,7 +181,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Budgets summary — still placeholder until budget service is wired */}
+        {/* Budgets summary */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5">
           <div className="flex items-center justify-between mb-4">
             <p className="font-semibold text-gray-700 dark:text-gray-200">Budgets</p>
@@ -186,7 +195,31 @@ export default function Dashboard() {
               </button>
             </div>
           </div>
-          <Empty message="Budget service not connected yet" />
+          {budgets.length === 0 ? (
+            <Empty message="No budgets set yet" />
+          ) : (
+            <div className="space-y-3">
+              {budgets.slice(0, 4).map(b => {
+                const pct  = Math.min(100, Math.round((b.spent / b.amount) * 100));
+                const over = b.spent > b.amount;
+                const color = over ? "#ef4444" : "#6366f1";
+                return (
+                  <div key={b.id}>
+                    <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                      <span className="font-medium">{b.category}</span>
+                      <span className={over ? "text-red-500" : ""}>{pct}%</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
+                    </div>
+                  </div>
+                );
+              })}
+              {budgets.length > 4 && (
+                <p className="text-xs text-gray-400 text-center pt-1">+{budgets.length - 4} more</p>
+              )}
+            </div>
+          )}
         </div>
 
       </div>
