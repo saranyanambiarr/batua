@@ -195,9 +195,3 @@ Money_Manager/
 |---|---|
 | `DATABASE_URL` | PostgreSQL connection string |
 | `JWT_SECRET_KEY` | Same secret as user_service for token verification |
-
----
-
-## License
-
-MIT
