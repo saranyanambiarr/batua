@@ -10,6 +10,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from app.api.routes import auth, users
 from app.db.base import Base
 from app.db.session import engine
+from app.core.config import settings
 from app.core.logging import get_logger
 
 Base.metadata.create_all(bind=engine)
@@ -24,9 +25,10 @@ Instrumentator().instrument(app).expose(app)
 # including error responses. If added after, a 500 will have no
 # Access-Control-Allow-Origin header and the browser reports a CORS error
 # instead of the real error.
+_cors_origins = list({settings.FRONTEND_URL, "http://localhost:5173"})
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -7,6 +7,7 @@ from app.api.routes import transactions
 from app.db.base import Base
 from app.db.session import engine
 from app.db import models  # noqa: F401 — ensures models are registered before create_all
+from app.core.config import settings
 from app.core.logging import get_logger
 
 Base.metadata.create_all(bind=engine)
@@ -17,9 +18,10 @@ app = FastAPI(title="Transaction Service")
 
 Instrumentator().instrument(app).expose(app)
 
+_cors_origins = list({settings.FRONTEND_URL, "http://localhost:5173"})
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

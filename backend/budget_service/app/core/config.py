@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     TRANSACTION_DATABASE_URL: str  # read-only connection to transaction_db for spent calculation
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
+    FRONTEND_URL: str = "http://localhost:5173"
 
     class Config:
         env_file = ".env"

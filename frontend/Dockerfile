@@ -4,6 +4,7 @@ WORKDIR /app
 # Build args — Vite bakes these in at build time, not runtime
 ARG VITE_API_BASE_URL
 ARG VITE_TRANSACTION_API_URL
+ARG VITE_BUDGET_API_URL
 
 COPY package*.json .
 RUN npm install
