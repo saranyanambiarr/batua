@@ -18,6 +18,7 @@ import Calendar         from "./pages/Calendar";
 import Charts           from "./pages/Charts";
 import Export           from "./pages/Export";
 import Profile          from "./pages/Profile";
+import AIReport         from "./pages/AIReport";
 import Layout           from "./components/Layout";
 import ProtectedRoute   from "./routes/ProtectedRoute";
 import { useAuth }      from "./context/AuthContext";
@@ -45,6 +46,7 @@ function App() {
         { path: "/charts",       Page: Charts       },
         { path: "/export",       Page: Export       },
         { path: "/profile",      Page: Profile      },
+        { path: "/ai-report",    Page: AIReport     },
       ].map(({ path, Page }) => (
         <Route
           key={path}

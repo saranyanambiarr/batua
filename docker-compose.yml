@@ -112,6 +112,21 @@ services:
       transaction_db:
         condition: service_healthy
 
+  agent_service:
+    build:
+      context: ./backend/agent_service
+    ports:
+      - "8003:8000"
+    env_file:
+      - ./backend/agent_service/.env
+    environment:
+      TRANSACTION_DATABASE_URL: postgresql://transaction_service:paisa@transaction_db:5432/transaction_db
+    volumes:
+      - app_logs:/app/logs
+    depends_on:
+      transaction_db:
+        condition: service_healthy
+
   # ── Observability ────────────────────────────────────────────────────────────
 
   prometheus:
@@ -151,6 +166,7 @@ services:
         VITE_API_BASE_URL: http://localhost:8000
         VITE_TRANSACTION_API_URL: http://localhost:8001
         VITE_BUDGET_API_URL: http://localhost:8002
+        VITE_AGENT_API_URL: http://localhost:8003
     ports:
       - "5173:5173"
     depends_on:

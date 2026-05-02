@@ -28,6 +28,7 @@ const NAV_ITEMS = [
   { label: "Charts",       icon: "📈", path: "/charts"       },
   { label: "Calendar",     icon: "▦",  path: "/calendar"     },
   { label: "Export",       icon: "↑",  path: "/export"       },
+  { label: "AI Report",    icon: "✦",  path: "/ai-report"    },
 ];
 
 export default function Layout({ children }) {
