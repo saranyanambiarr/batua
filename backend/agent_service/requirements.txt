@@ -4,5 +4,9 @@ sqlalchemy
 psycopg2-binary
 python-jose[cryptography]
 pydantic-settings
-anthropic
+google-generativeai
+langchain
+langchain-google-genai
+langchain-core
+pandas
 prometheus-fastapi-instrumentator

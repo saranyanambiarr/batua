@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from app.api.deps import get_txn_db, get_current_user_id
 from app.db.models import Transaction
-from app.services.claude import compute_aggregates, generate_report
+from app.services.gemini import compute_aggregates, generate_report
 from app.core.logging import get_logger
 
 logger = get_logger("agent_service.report")
